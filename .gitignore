@@ -132,4 +132,4 @@ dmypy.json
 notebooks/
 alerts/
 
-trading_data/
+src/wallets.json

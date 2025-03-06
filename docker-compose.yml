@@ -6,13 +6,15 @@ services:
     build: .
     image: locust-master
     container_name: locust-master
+    env_file:
+      - .env
     ports:
       - "8089:8089"  # UI
       - "5557:5557"  # Worker Communication
       - "5558:5558"
     environment:
       - LOCUST_MODE=master
-    command: ["locust", "-f", "src/performance_test.py", "--master", "--host=http://localhost"]
+    command: ["locust", "-f", "src/performance_test.py", "--master", "--host=${LOCUST_TARGET_HOST}"]
 
   # 📌 Locust Worker 1
   locust-worker-1:
@@ -20,16 +22,20 @@ services:
     image: locust-worker
     depends_on:
       - locust-master
+    env_file:
+      - .env
     environment:
       - LOCUST_MODE=worker
     command: ["locust", "-f", "src/performance_test.py", "--worker", "--master-host=locust-master"]
-#
+
   # 📌 Locust Worker 2 (more workers can be added)
   locust-worker-2:
     build: .
     image: locust-worker
     depends_on:
       - locust-master
+    env_file:
+      - .env
     environment:
       - LOCUST_MODE=worker
     command: ["locust", "-f", "src/performance_test.py", "--worker", "--master-host=locust-master"]

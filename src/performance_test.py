@@ -1,7 +1,9 @@
 """ Simple stress test for evm compatible bc"""
 import json
 import logging
+import os
 import random
+import sys
 import time
 from pathlib import Path
 
@@ -16,26 +18,38 @@ logger = logging.getLogger(__name__)
 
 # Define the base directory dynamically
 BASE_DIR = Path(__file__).resolve().parent
-
-# Load Configuration
-with open(BASE_DIR / "config.json", encoding="utf-8") as file:
-    config = json.load(file)
-
-# Load Wallets
-with open(BASE_DIR / "wallets.json", encoding="utf-8") as file:
-    wallets = json.load(file)
-
-# Load Uniswap ABIs
 ABI_DIR = BASE_DIR / "abi"
 
-with open(ABI_DIR / "UniswapV2Factory.json", encoding="utf-8") as f:
-    factory_abi = json.load(f)
+# Resolve paths
+wallets_path = Path(os.getenv("WALLETS_FILE", BASE_DIR / "wallets.json"))
+config_path = Path(os.getenv("CONFIG_FILE", BASE_DIR / "config.json"))
+loctus_host = os.getenv("LOCUST_TARGET_HOST", "http://localhost")
 
-with open(ABI_DIR / "UniswapV2Router02.json", encoding="utf-8") as f:
-    router_abi = json.load(f)
+# Load all required files in a single try-except block
+try:
+    with open(config_path, encoding="utf-8") as file:
+        config = json.load(file)
+    logger.info("✅ Loaded config")
 
-with open(ABI_DIR / "UniswapV2Pair.json", encoding="utf-8") as f:
-    pair_abi = json.load(f)
+    with open(wallets_path, encoding="utf-8") as file:
+        wallets = json.load(file)
+    logger.info("✅ Loaded wallets")
+
+    with open(ABI_DIR / "UniswapV2Factory.json", encoding="utf-8") as f:
+        factory_abi = json.load(f)
+    logger.info("✅ Loaded UniswapV2Factory ABI")
+
+    with open(ABI_DIR / "UniswapV2Router02.json", encoding="utf-8") as f:
+        router_abi = json.load(f)
+    logger.info("✅ Loaded UniswapV2Router02 ABI")
+
+    with open(ABI_DIR / "UniswapV2Pair.json", encoding="utf-8") as f:
+        pair_abi = json.load(f)
+    logger.info("✅ Loaded UniswapV2Pair ABI")
+
+except Exception as e:
+    logger.error(f"❌ ERROR: Failed to load required files: {e}")
+    sys.exit(1)
 
 
 # Convert contract addresses to checksum format
@@ -98,7 +112,7 @@ def get_token_balance(wallet_address, token_address):
 
 class BlockchainUser(HttpUser):
     """ User definition """
-    host = "http://localhost"  # Dummy value (Locust requires this)
+    host = loctus_host  # Dummy value (Locust requires this)
     wait_time = between(1, 5)  # Random wait time between tasks
 
     def on_start(self):
